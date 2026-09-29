@@ -1,5 +1,7 @@
 # Mental Health Recovery Trajectories — Part A
 
+> **Public scope:** Part A code and results are documented below. [Jump to the Part B results summary](#part-b-results) for findings from the private final report. Part B assignment materials and implementation are not published.
+
 **Exploratory data engineering, sentiment-based labels and a first machine-learning baseline using longitudinal Beyond Blue forum data.**
 
 This project investigates whether language in the first five comments of a discussion thread can predict a sentiment-based label derived from its later comments. Part A builds the initial pipeline: combine category-specific datasets, investigate identifier collisions, reconstruct thread interactions, create linguistic features and evaluate a Random Forest classifier.
@@ -196,7 +198,60 @@ These correspond to cells **4, 7, 53, 56 and 58**, counting all cells from one i
 - **Evaluation scope:** one random thread-level split is used. There is no author-grouped split, time-based holdout, cross-validation or hyperparameter search; authors may appear in multiple threads across the split.
 - **Reproducibility and data handling:** dependencies are unpinned and exploratory outputs include sample records. Review and redact identifying fields and forum text before sharing derived data or refreshed notebook outputs. The preprocessing export retains source fields and is not an anonymised dataset.
 
-**Part B:** the later research extends this initial baseline, but its implementation is not included in this repository. A public Part B showcase is planned separately. The portfolio case study describes the wider project; its later validation findings should not be read as Part A results.
+## Part B results
+
+**Part B extended the baseline and tested whether its automated labels represented the intended outcome. The main finding was weak agreement with human annotation, despite some ability to predict the automated labels.**
+
+This section summarises aggregate results from my final Part B report. **The Part B report, assignment materials, implementation and dataset remain private.** The public notebook above is still Part A; the results below cannot be reproduced from that notebook alone.
+
+### What changed after Part A
+
+- Reconstructed **4,428 modelling threads** from the same 4,735 post rows and 306,334 comment rows. Threads needed a later comment from the original poster to qualify.
+- Kept the first five comments as predictors, but derived the later sentiment label **only from the original poster's subsequent comments**, excluding community replies from the target.
+- Used revised VADER boundaries: `Improved` at a mean score of at least `0.25`, `Worsened` at or below `-0.05`, and `Stable` otherwise. These still describe a sentiment proxy, not a clinical outcome.
+- Combined **five behavioural features**—singular/plural pronoun counts, response timing, sentiment volatility and sentiment slope—with **150 TF-IDF unigram/bigram features**. Vectorisation and scaling were fitted on training data.
+- Compared Logistic Regression, Random Forest and Linear SVM, then evaluated the labels themselves against **60 blindly annotated threads**.
+
+### Predicting automated labels
+
+The final 80/20 stratified split contained **3,542 training threads and 886 test threads**. For Part B's original author-isolated VADER labels, the report records:
+
+| Model | Accuracy | Balanced accuracy | Macro-F1 |
+| --- | ---: | ---: | ---: |
+| Stratified random baseline | 0.497 | 0.309 | 0.309 |
+| Random Forest | 0.669 | 0.359 | 0.330 |
+| Logistic Regression | 0.509 | 0.460 | **0.424** |
+| Linear SVM | 0.500 | 0.447 | 0.414 |
+
+Logistic Regression had the strongest macro-F1 on this target. Random Forest's higher accuracy concealed weak minority-class recall: **1% for Stable and 12% for Worsened**, compared with **33% and 47%** for Linear SVM.
+
+A separate Linear SVM run on the report's revised automated label set reached **0.440 macro-F1**, **0.481 balanced accuracy** and **0.523 accuracy**. The report calls these “validated labels”; they are not independently established clinical ground truth. Because the target distribution changed, 0.440 should not be presented as a directly comparable gain over the original-label scores or baseline above.
+
+### Checking the labels against human judgment
+
+On the **60-thread, single-annotator** reference set, VADER agreed with the human labels in **46.7%** of cases. Cohen's **κ was 0.200**, with a **95% bootstrap confidence interval of 0.01–0.37** based on 2,000 resamples.
+
+For the separate human-reference evaluation, supervised models were trained on the **4,368 non-reference threads** and assessed against those 60 human annotations:
+
+| Evaluated against human annotations | Macro-F1 | Cohen's κ |
+| --- | ---: | ---: |
+| VADER labeller itself | 0.461 | 0.200 |
+| Linear SVM trained on VADER labels | 0.324 | -0.020 |
+| Linear SVM trained on revised automated labels | 0.380 | 0.085 |
+
+The revised labeller was selected using the same 60 reference threads. Its downstream result therefore carries selection bias, even though those threads were excluded from supervised training.
+
+Another useful finding concerned evaluation procedure: threshold tuning initially gave **κ = 0.242** when fitted and scored on the same annotations. With five-fold out-of-fold evaluation, that figure fell to **0.064**. The apparent improvement did not survive that correction.
+
+### What I learned
+
+This experiment showed why a model's success at reproducing sentiment-derived labels does not establish that it predicts recovery. The stronger research contribution was the label-validation workflow and the evidence that the target definition needed improvement before further model optimisation. These observations describe this dataset and experiment; they do not establish a universal mathematical ceiling for models trained on noisy labels.
+
+The findings are limited by one annotator, a small reference set, no inter-annotator agreement estimate, labeller-selection bias and data from a single platform. Requiring the original poster to return also excludes a potentially important group of users. The final pipeline retained identified duplicate posts and unparseable timestamps, adding further data-quality constraints.
+
+The next research priority is a clearer annotation codebook, multiple annotators and an independent human-labelled evaluation set. The reported results do **not** establish a clinically validated predictor or a deployable mental-health triage system.
+
+*Source: my private final Part B report, methods and results sections, Tables 2–6 and Appendix B. This is a newly written public summary of reported findings, not a copy of the assignment or a fresh reproduction of its experiments.*
 
 ## Author and licence
 
