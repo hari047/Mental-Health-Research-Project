@@ -1,220 +1,95 @@
-# Mental Health Recovery Trajectories — Part A
+# Mental Health Recovery Trajectories
 
-> **Public scope:** Part A code and results are documented below. [Jump to the Part B results summary](#part-b-results) for findings from the private final report. Part B assignment materials and implementation are not published.
+**A university research showcase exploring early forum language, sentiment-based labels and their agreement with human judgment.**
 
-**Exploratory data engineering, sentiment-based labels and a first machine-learning baseline using longitudinal Beyond Blue forum data.**
+This repository demonstrates research I completed as part of my **Master of Artificial Intelligence and Machine Learning at Adelaide University**, through university research work and assessed assignments. It presents the **Part A exploratory notebook** and a summary of the **final Part B findings**.
 
-This project investigates whether language in the first five comments of a discussion thread can predict a sentiment-based label derived from its later comments. Part A builds the initial pipeline: combine category-specific datasets, investigate identifier collisions, reconstruct thread interactions, create linguistic features and evaluate a Random Forest classifier.
+> [!IMPORTANT]
+> **Academic demonstration only. The underlying research dataset is proprietary and is not supplied or licensed for public use.** The Part B report, assignment materials, implementation and annotation files remain private.
+>
+> **The repository materials must not be copied, republished, redistributed or submitted as someone else's work, in whole or in part, on any website, repository, platform or assignment.** No new permission for those uses is granted here. The scope and necessary exceptions for earlier licences, GitHub's terms and applicable law are explained under [Usage restrictions](#usage-restrictions).
 
-The main contribution is a working exploratory pipeline and a baseline that exposes the need for better targets and evaluation. The labels `Improved`, `Stable` and `Worsened` are automated sentiment proxies; they are not verified measures of a person's recovery.
+[View the Part A notebook](Mental_Health_Trajectories_Part_A.ipynb) · [Read the Part B results](#part-b-results) · [Portfolio case study](https://www.hariprasad.world/mental-health-research)
 
-[Explore the Part A notebook](Mental_Health_Trajectories_Part_A.ipynb) · [Read the wider research case study](https://www.hariprasad.world/mental-health-research)
+## Research question and main finding
 
-## At a glance
+**Can language in the first five comments of a discussion thread help predict the original poster's later trajectory?**
 
-| Item | Part A implementation |
-| --- | --- |
-| Source | Beyond Blue forum post and comment CSV files |
-| Recorded input | 4,735 post rows and 306,334 comment rows across nine file-derived categories |
-| Modelling dataset | 4,698 threads with both an early and a later comment slice |
-| Early features | Two raw counts: first-person singular and plural pronouns |
-| Target | Mean VADER compound sentiment of comments after the first five |
-| Model | Random Forest, 100 trees, balanced class weights |
-| Evaluation | Stratified 80/20 thread split; `random_state=42` |
-| Recorded outcome | 78.8% accuracy; macro F1 of 0.31; poor minority-class performance |
+I investigated this through data preparation, linguistic feature engineering, sentiment-based labelling and supervised classification. The project then tested a more fundamental question: whether those automatically generated labels captured what a human reader judged to be improvement, stability or worsening.
 
-These figures come from the notebook's saved outputs. They describe Part A and should not be substituted for the later Part B dataset or results.
+**The central finding was weak agreement between the sentiment-derived labels and human annotation.** On a 60-thread reference set, VADER achieved Cohen's **κ = 0.200**; an SVM trained on VADER labels achieved **κ = -0.020** against the human annotations. Predicting an automated sentiment category did not establish reliable prediction of recovery.
+
+The labels `Improved`, `Stable` and `Worsened` are experimental categories. They are **not clinical diagnoses, verified recovery outcomes or validated risk assessments**.
 
 ## What I built
 
-- **Multi-file ingestion:** load category-specific post and comment files and retain their source category.
-- **Identifier investigation:** examine reused post IDs, duplicate records and timestamp parsing problems before using category-aware composite keys for the final merge.
-- **Exploratory analysis:** visualise thread lengths, category activity and post/comment word counts.
-- **A temporal feature/target split:** use the first five comments for features and subsequent comments for an outcome proxy.
-- **An interpretable baseline:** train a Random Forest on two linguistic features and inspect class-level metrics and feature importance.
+- A pipeline to ingest category-specific forum files, investigate identifiers and reconstruct thread interactions.
+- A separation between early comments used as predictors and later comments used to construct the target.
+- A Part A Random Forest baseline using first-person pronoun counts.
+- A Part B comparison using behavioural features, TF-IDF, Logistic Regression, Random Forest and Linear SVM.
+- A blinded human-annotation exercise, agreement analysis and an evaluation of models against those annotations.
 
-## Pipeline
+## At a glance
 
-```mermaid
-flowchart TD
-    A[Category-specific post and comment CSVs] --> B[Create category + Post_ID composite keys]
-    B --> C[Merge and clean text]
-    C --> D[Parse dates and order comments within each thread]
-    D --> E[First five comments]
-    D --> F[Remaining comments]
-    E --> G[Singular and plural pronoun counts]
-    F --> H[Mean VADER compound sentiment]
-    H --> I[Improved / Stable / Worsened proxy labels]
-    G --> J[Stratified train/test split]
-    I --> J
-    J --> K[Random Forest and class-level evaluation]
-```
+Both stages used source files containing **4,735 post rows and 306,334 comment rows across nine categories**. Their modelling datasets and targets differ:
 
-### 1. Ingest and join the data
+| | Part A: public notebook | Part B: private implementation, public results summary |
+| --- | --- | --- |
+| Modelling threads | 4,698 | 4,428 |
+| Early input | First five comments in each thread | First five comments in each thread |
+| Later target text | All comments after the first five | Only the original poster's comments after the first five |
+| Features | Two pronoun counts | Five behavioural features and 150 TF-IDF features |
+| Final model comparison | Random Forest | Logistic Regression, Random Forest and Linear SVM |
+| Main evaluation | Stratified 80/20 thread split | Stratified 80/20 split, plus a separate 60-thread human-reference evaluation |
+| Key result | 0.788 accuracy; 0.31 macro-F1 | 0.424 macro-F1 on the original Part B labels; weak human-label agreement |
 
-The notebook reads `*_post.csv` and `*_comment.csv` files. In its final ingestion block, it derives `Forum_Category` from each filename and creates:
+These are separate experiments. Their scores should not be treated as a directly comparable before-and-after improvement.
 
-```python
-Composite_ID = Forum_Category + "_" + Post_ID.astype(str)
-```
+## Part A: exploratory pipeline and baseline
 
-Comments are joined to posts using this key. This addresses the ambiguity of using a bare `Post_ID` across category files. The final block records 306,334 merged interaction rows and exports `BeyondBlue_Master_Preprocessed.csv`.
+The [public notebook](Mental_Health_Trajectories_Part_A.ipynb) records exploratory analysis, intermediate approaches and the initial modelling pipeline. Its code and saved results have been preserved.
 
-Earlier cells explore exact-row deduplication, UUID-based thread identifiers and nearest-preceding-post matching. These are exploratory alternatives: the final ingestion block reloads the source files and uses the composite-key merge instead.
+### Data preparation
 
-### 2. Clean and order the interactions
+The final ingestion block reads category-specific `*_post.csv` and `*_comment.csv` files. It derives a forum category from each filename and joins records using a composite of **category and post ID**, addressing the ambiguity of post IDs reused across categories. The saved output records **306,334 merged interaction rows**.
 
-Text cleaning removes HTML tags, replaces line breaks and collapses whitespace. Comment date/time strings are stripped of non-ASCII characters, parsed with `dayfirst=True` and sorted within each `Composite_ID`.
+The notebook also explores exact-row deduplication, UUID identifiers and nearest-preceding-post matching. These are earlier experiments: the final ingestion block reloads the source files and uses the composite-key merge. It does not carry forward all of the earlier cleaning decisions.
 
-Comments are ranked within each thread. The first five form the **early slice**, and comments ranked above five form the **later slice**. The modelling dataset retains only threads with both slices, producing 4,698 threads in the saved run.
+### Features and target
 
-### 3. Construct the target
+After parsing timestamps and ordering comments within each thread, the first five comments supply two features: raw counts of first-person singular and plural pronouns.
 
-NLTK's VADER analyser scores each later comment. The mean compound score for the thread is converted to a label:
+The target is the **mean VADER compound sentiment of all remaining comments**, including community replies. A score above `0.05` is labelled `Improved`, below `-0.05` is `Worsened`, and otherwise `Stable`. This measures later sentiment; it is not a measured change in the original poster's health.
 
-| Mean later-comment sentiment | Label used in the notebook |
-| --- | --- |
-| Greater than `0.05` | `Improved` |
-| From `-0.05` to `0.05`, inclusive | `Stable` |
-| Less than `-0.05` | `Worsened` |
+### Recorded baseline
 
-This is a measure of **later sentiment level**, not a measured change from an earlier baseline. It combines comments from all contributors rather than tracking only the original poster.
+A Random Forest with **100 trees**, balanced class weights and `random_state=42` was fitted using a stratified split of **3,758 training threads and 940 test threads**.
 
-### 4. Extract features and train the baseline
+| Metric | Saved notebook result |
+| --- | ---: |
+| Accuracy | 0.788 |
+| Macro-F1 | 0.31 |
+| Improved recall | 0.85 |
+| Stable recall | 0.03 |
+| Worsened recall | 0.02 |
 
-The early comments are concatenated and converted to two numeric features:
-
-- `Singular_Pronouns`: occurrences of `i`, `me`, `my`, `mine` and `myself`.
-- `Plural_Pronouns`: occurrences of `we`, `us`, `our`, `ours` and `ourselves`.
-
-These are raw counts, without word-count normalisation. The original post text and the concatenated comment text are not model inputs. Part A does not use TF-IDF, embeddings or a neural language model.
-
-```python
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
-
-rf_model = RandomForestClassifier(
-    n_estimators=100,
-    random_state=42,
-    class_weight="balanced"
-)
-```
-
-## Results and interpretation
-
-The saved run uses **3,758 training threads** and **940 test threads**.
-
-| Class | Precision | Recall | F1 | Test support |
-| --- | ---: | ---: | ---: | ---: |
-| Improved | 0.92 | 0.85 | 0.88 | 865 |
-| Stable | 0.02 | 0.03 | 0.02 | 29 |
-| Worsened | 0.01 | 0.02 | 0.02 | 46 |
-| Macro average | 0.32 | 0.30 | 0.31 | 940 |
-| Weighted average | 0.84 | 0.79 | 0.82 | 940 |
-
-**Overall accuracy: 78.8%.** The class report is rounded to two decimal places in the notebook.
-
-The test set is heavily imbalanced: 865 of 940 threads are labelled `Improved`. Always predicting that class would achieve **92.0% accuracy**, calculated from the saved class supports. That comparison is not a separately trained baseline in the notebook, but it shows why accuracy alone is misleading here.
-
-The Random Forest does not outperform this majority-class accuracy reference and identifies very few `Stable` or `Worsened` threads. Part A therefore establishes a starting point for improving feature representation and checking whether sentiment-derived labels capture the intended research question. It does not demonstrate reliable recovery prediction or an operational triage system.
-
-## Repository contents
-
-```text
-Mental-Health-Research-Project/
-├── Mental_Health_Trajectories_Part_A.ipynb
-├── README.md
-└── LICENSE
-```
-
-The repository does not include `dataset.zip`, the source CSVs, a fitted model or a pinned dependency file. Saved notebook outputs can be inspected without those files; recomputing the analysis requires the corresponding source data. (The dataset is proprietary and cannot be shared)
-
-## Running the analysis
-
-### Environment
-
-The notebook records a Python **3.13.3** kernel. Package versions were not recorded, so the following commands are a starting environment derived from the imports, not a verified version lock.
-
-```bash
-git clone https://github.com/hari047/Mental-Health-Research-Project.git
-cd Mental-Health-Research-Project
-python -m venv .venv
-```
-
-Activate the environment:
-
-```powershell
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-```
-
-```bash
-# macOS / Linux
-source .venv/bin/activate
-```
-
-Install the imported packages and open the notebook:
-
-```bash
-python -m pip install jupyterlab pandas numpy matplotlib seaborn nltk scikit-learn
-jupyter lab Mental_Health_Trajectories_Part_A.ipynb
-```
-
-The VADER cell downloads `vader_lexicon` through NLTK if necessary, which requires network access.
-
-### Data requirements
-
-Place the authorised source CSVs beside the notebook, using matching category names such as `anxiety_post.csv` and `anxiety_comment.csv`. Alternatively, provide `dataset.zip` and run the extraction cell; it flattens CSV paths into the working directory and can overwrite files with the same basename.
-
-The final pipeline reads these fields:
-
-| File type | Required columns |
-| --- | --- |
-| Posts | `Post_ID`, `Post_Content`, `Post_Author`, `Post_Date`, `Post_Time` |
-| Comments | `Post_ID`, `Comment_Content`, `Comment_Date`, `Comment_Time` |
-
-Earlier exploratory cells also access fields including `Post_Author_Rank`, `Post_Category`, `Number_of_Comments`, `Comment_ID` and `Comment_Author`.
-
-### Focused execution path
-
-The notebook preserves development experiments and is not yet a clean **Restart Kernel → Run All** workflow. An early reassignment of `posts_df` removes category/composite-key columns needed by later exploratory cells.
-
-To follow the final baseline from a fresh kernel, execute these blocks in order:
-
-1. **Importing the libraries** — code beginning `# Importing all the necessary libraries`.
-2. **Extracting the dataset** — only if using `dataset.zip`.
-3. **Merging the Datasets** — code beginning `# INGEST & TAG POSTS`.
-4. **Implementing VADER** — create the early features and later labels.
-5. **Implement the Random Forest Classifier Model** — fit and evaluate the classifier.
-
-These correspond to cells **4, 7, 53, 56 and 58**, counting all cells from one in the documented notebook revision. The comments-per-category plot immediately after the merge is optional. This path follows the code dependencies; the reported results above are retained notebook outputs, not a new execution performed for this README.
-
-## Limitations and next steps
-
-- **Target validity:** positive forum sentiment is not evidence of clinical recovery. Supportive replies can dominate the later-comment average, and Part A contains no human validation of these labels.
-- **Limited representation:** two pronoun counts capture a narrow part of language and depend on comment length. The baseline needs comparison with richer features and an explicit dummy classifier.
-- **Data integrity:** the final reload does not retain the earlier exact-row deduplication. Composite-key uniqueness, merge cardinality, duplicate interactions and failed timestamps need explicit checks before treating the pipeline as reproducible.
-- **Evaluation scope:** one random thread-level split is used. There is no author-grouped split, time-based holdout, cross-validation or hyperparameter search; authors may appear in multiple threads across the split.
-- **Reproducibility and data handling:** dependencies are unpinned and exploratory outputs include sample records. Review and redact identifying fields and forum text before sharing derived data or refreshed notebook outputs. The preprocessing export retains source fields and is not an anonymised dataset.
+The test set contained 865 `Improved`, 29 `Stable` and 46 `Worsened` labels. High overall accuracy therefore concealed very poor recall for the two minority classes.
 
 ## Part B results
 
-**Part B extended the baseline and tested whether its automated labels represented the intended outcome. The main finding was weak agreement with human annotation, despite some ability to predict the automated labels.**
+**Part B refined the target, expanded the features and evaluated label validity.** This section summarises aggregate findings from my private final report. The public Part A notebook does not contain the Part B implementation and cannot reproduce these results.
 
-This section summarises aggregate results from my final Part B report. **The Part B report, assignment materials, implementation and dataset remain private.** The public notebook above is still Part A; the results below cannot be reproduced from that notebook alone.
+### Changes to the experiment
 
-### What changed after Part A
+- Retained **4,428 threads** with a later comment from the original poster; community replies were excluded from the target.
+- Used asymmetric sentiment boundaries: `Improved` at or above `0.25`, `Worsened` at or below `-0.05`, and `Stable` otherwise.
+- Combined singular/plural pronoun counts, time between the first two comments, sentiment volatility and sentiment slope with **150 TF-IDF unigram/bigram features**.
+- Fitted the vectoriser and relevant feature scaling on training data, then compared three supervised models.
+- Annotated **60 threads** with the automated label hidden and used them to examine agreement with human judgment.
 
-- Reconstructed **4,428 modelling threads** from the same 4,735 post rows and 306,334 comment rows. Threads needed a later comment from the original poster to qualify.
-- Kept the first five comments as predictors, but derived the later sentiment label **only from the original poster's subsequent comments**, excluding community replies from the target.
-- Used revised VADER boundaries: `Improved` at a mean score of at least `0.25`, `Worsened` at or below `-0.05`, and `Stable` otherwise. These still describe a sentiment proxy, not a clinical outcome.
-- Combined **five behavioural features**—singular/plural pronoun counts, response timing, sentiment volatility and sentiment slope—with **150 TF-IDF unigram/bigram features**. Vectorisation and scaling were fitted on training data.
-- Compared Logistic Regression, Random Forest and Linear SVM, then evaluated the labels themselves against **60 blindly annotated threads**.
+### Classification against automated labels
 
-### Predicting automated labels
-
-The final 80/20 stratified split contained **3,542 training threads and 886 test threads**. For Part B's original author-isolated VADER labels, the report records:
+The original Part B target contained 3,015 `Improved`, 682 `Stable` and 731 `Worsened` labels. The stratified 80/20 split produced **3,542 training threads and 886 test threads**.
 
 | Model | Accuracy | Balanced accuracy | Macro-F1 |
 | --- | ---: | ---: | ---: |
@@ -223,44 +98,70 @@ The final 80/20 stratified split contained **3,542 training threads and 886 test
 | Logistic Regression | 0.509 | 0.460 | **0.424** |
 | Linear SVM | 0.500 | 0.447 | 0.414 |
 
-Logistic Regression had the strongest macro-F1 on this target. Random Forest's higher accuracy concealed weak minority-class recall: **1% for Stable and 12% for Worsened**, compared with **33% and 47%** for Linear SVM.
+Logistic Regression had the highest macro-F1 on this target. Random Forest recalled only **1% of Stable and 12% of Worsened** cases; Linear SVM recalled **33% and 47%**, respectively.
 
-A separate Linear SVM run on the report's revised automated label set reached **0.440 macro-F1**, **0.481 balanced accuracy** and **0.523 accuracy**. The report calls these “validated labels”; they are not independently established clinical ground truth. Because the target distribution changed, 0.440 should not be presented as a directly comparable gain over the original-label scores or baseline above.
+A separate Linear SVM experiment on revised automated labels recorded **0.440 macro-F1**, **0.481 balanced accuracy** and **0.523 accuracy**. The report calls these “validated labels”, but they are not independently established clinical ground truth. The changed target distribution means this score is not a directly comparable improvement over the table above.
 
-### Checking the labels against human judgment
+### Agreement with human annotation
 
-On the **60-thread, single-annotator** reference set, VADER agreed with the human labels in **46.7%** of cases. Cohen's **κ was 0.200**, with a **95% bootstrap confidence interval of 0.01–0.37** based on 2,000 resamples.
+I annotated the 60 reference threads with the automatic labels hidden. There was **one annotator**, so this provides a human reference rather than independently established ground truth.
 
-For the separate human-reference evaluation, supervised models were trained on the **4,368 non-reference threads** and assessed against those 60 human annotations:
+VADER agreed with these annotations in **46.7%** of cases: **Cohen's κ = 0.200**, with a **95% bootstrap confidence interval of 0.01–0.37** from 2,000 resamples.
 
-| Evaluated against human annotations | Macro-F1 | Cohen's κ |
+For the separate model evaluation, classifiers were trained on the **4,368 non-reference threads** and assessed against the same 60 human annotations:
+
+| Predictor evaluated against human annotations | Macro-F1 | Cohen's κ |
 | --- | ---: | ---: |
 | VADER labeller itself | 0.461 | 0.200 |
 | Linear SVM trained on VADER labels | 0.324 | -0.020 |
 | Linear SVM trained on revised automated labels | 0.380 | 0.085 |
 
-The revised labeller was selected using the same 60 reference threads. Its downstream result therefore carries selection bias, even though those threads were excluded from supervised training.
+The revised labeller was selected using those same 60 reference threads. Excluding them from supervised training did **not** remove that selection bias.
 
-Another useful finding concerned evaluation procedure: threshold tuning initially gave **κ = 0.242** when fitted and scored on the same annotations. With five-fold out-of-fold evaluation, that figure fell to **0.064**. The apparent improvement did not survive that correction.
+Threshold tuning also exposed an evaluation problem: VADER initially reached **κ = 0.242** when thresholds were fitted and scored on the same annotations. The corrected **five-fold out-of-fold result was κ = 0.064**. The apparent gain did not survive that correction.
 
-### What I learned
+## Interpretation and limitations
 
-This experiment showed why a model's success at reproducing sentiment-derived labels does not establish that it predicts recovery. The stronger research contribution was the label-validation workflow and the evidence that the target definition needed improvement before further model optimisation. These observations describe this dataset and experiment; they do not establish a universal mathematical ceiling for models trained on noisy labels.
+The research contribution is the combination of a working exploratory pipeline, class-sensitive evaluation and evidence that the target labels need better validation. The experiments do not establish a universal mathematical limit on models trained with noisy labels.
 
-The findings are limited by one annotator, a small reference set, no inter-annotator agreement estimate, labeller-selection bias and data from a single platform. Requiring the original poster to return also excludes a potentially important group of users. The final pipeline retained identified duplicate posts and unparseable timestamps, adding further data-quality constraints.
+- **Target validity:** sentiment, supportive language and gratitude do not necessarily indicate recovery. Author isolation reduces one source of contamination but does not establish a valid clinical target.
+- **Small human reference:** 60 threads and one annotator give limited evidence, with no inter-annotator agreement estimate and bias from reusing the set for labeller selection.
+- **Data quality:** the final Part B report records retained duplicate posts and unparseable timestamps. The Part A final reload also does not retain the earlier deduplication.
+- **Sampling and evaluation:** requiring the original poster to return excludes other users. Data come from one platform, and the reported random thread splits do not establish generalisation to new authors, later periods or other communities.
+- **Practical use:** these results do not support clinical decision-making, diagnosis, automated triage or deployment as a mental-health risk detector.
 
-The next research priority is a clearer annotation codebook, multiple annotators and an independent human-labelled evaluation set. The reported results do **not** establish a clinically validated predictor or a deployable mental-health triage system.
+A stronger follow-up would establish a clearer annotation codebook, involve multiple annotators and evaluate against an independent human-labelled set before further model optimisation.
 
-*Source: my private final Part B report, methods and results sections, Tables 2–6 and Appendix B. This is a newly written public summary of reported findings, not a copy of the assignment or a fresh reproduction of its experiments.*
+## Repository contents and data availability
 
-## Author and licence
+| Material | Availability |
+| --- | --- |
+| Part A exploratory notebook and its saved outputs | Included for inspection as a research demonstration |
+| Part B aggregate findings | Summarised in this README |
+| Part B final report, assignment submissions and implementation | Private; not published here |
+| Underlying proprietary dataset, source CSVs and annotation files | Not supplied or licensed for public use |
 
-**Hari Prasad Rangaraj**
+**The research dataset is proprietary and must not be copied, shared, uploaded or redistributed.** Public visibility of the source forum does not grant permission through this repository to reuse its content. Rights in forum content and third-party materials remain with their respective rights holders.
 
-Supervised by **Dr Menasha Thilakaratne**, as credited in the notebook.
+The notebook is a preserved research artefact, not a packaged application or a supported reproduction kit. Its recorded kernel is Python 3.13.3; imports include pandas, NumPy, Matplotlib, seaborn, NLTK/VADER and scikit-learn. Package versions are not pinned, and the restricted inputs prevent independent end-to-end reproduction from this repository alone.
 
-The repository code is available under the [MIT License](LICENSE). This does not establish redistribution rights for the underlying forum data.
+For code inspection, the final Part A path is in the blocks headed **Importing the libraries**, **Merging the Datasets**, **Implementing VADER** and **Implement the Random Forest Classifier Model**. Earlier cells preserve development experiments, so the notebook should not be assumed to support a clean “Restart Kernel → Run All” execution. No fresh experiments were run to prepare this README.
 
-This repository was made as a public showcase of an Adelaide University Research Project and must not be copied or redistributed. 
+## Usage restrictions
 
-*README prepared from notebook revision [`0cdc9ef`](https://github.com/hari047/Mental-Health-Research-Project/blob/0cdc9ef7bf6c7a14990a8ee98b9418c2cf8d6a79/Mental_Health_Trajectories_Part_A.ipynb).*
+**Academic showcase only — all rights reserved, subject to the exceptions below.** This work was completed for university research and assignments and is displayed to demonstrate my methods, technical contribution and findings.
+
+Unless separately authorised in writing by the relevant rights holder, repository materials must strictly **not be copied, reproduced, adapted, republished, redistributed, mirrored or uploaded elsewhere**, in whole or in part. They must not be submitted as someone else's coursework, assignment, research or original work. Attribution alone does not grant reuse permission.
+
+The [repository rights notice](LICENSE) records these restrictions. It does not claim to revoke permissions already granted for material in earlier MIT-licensed revisions, override GitHub's public-repository viewing and forking terms, remove rights provided by applicable law, or alter third-party licences. No new reuse licence is offered by this revision.
+
+## Author and evidence
+
+**Hari Prasad Rangaraj** · Master of Artificial Intelligence and Machine Learning, Adelaide University
+
+**Supervisor:** Dr Menasha Thilakaratne
+
+- **Part A evidence:** code and saved outputs in [notebook revision `0cdc9ef`](https://github.com/hari047/Mental-Health-Research-Project/blob/0cdc9ef7bf6c7a14990a8ee98b9418c2cf8d6a79/Mental_Health_Trajectories_Part_A.ipynb).
+- **Part B evidence:** my private final report, methods and results sections, Tables 2–6 and Appendix B. Only an original summary of aggregate findings is published here.
+
+*README reviewed and updated: 29 September 2026.*

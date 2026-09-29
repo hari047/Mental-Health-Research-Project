@@ -1,21 +1,39 @@
-MIT License
+RESEARCH SHOWCASE — RIGHTS RESERVED
 
 Copyright (c) 2026 Hari Prasad Rangaraj
+All rights reserved, subject to the exceptions stated below.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This repository demonstrates research completed as part of university work
+and assessed assignments. It is provided for inspection of the author's
+methods and findings. This revision grants no new licence to reuse the work.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Unless separately authorised in writing by the relevant rights holder,
+repository materials must strictly not be copied, reproduced, modified,
+adapted, republished, redistributed, mirrored or uploaded to any other
+website, repository, platform or service, in whole or in part. They must not
+be submitted as another person's coursework, assignment, research or
+original work. Attribution alone does not grant permission.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+The underlying research dataset is proprietary. It is not supplied or
+licensed for public use through this repository and must not be copied,
+shared or redistributed. The Part B report, assignment materials,
+implementation and annotation files remain private.
+
+SCOPE AND EXISTING RIGHTS
+
+This notice applies only to rights the author is entitled to control.
+Rights in third-party content, forum data and dependencies remain with
+their respective rights holders and are subject to their own terms.
+
+Earlier revisions of this repository were distributed under the MIT
+License. This notice does not revoke or restrict permissions already
+granted under that licence for those materials. The earlier licence and
+copyright notice remain available in the repository history, including:
+https://github.com/hari047/Mental-Health-Research-Project/blob/c7a5cc364e10b7cb133ed6fb5f9ed093dd4e4468/LICENSE
+
+Nothing in this notice overrides permissions arising from GitHub's Terms
+of Service, including viewing and forking public repositories, or rights
+and exceptions provided by applicable law. No new permission to reuse
+the work is granted beyond those existing rights.
+
+Notice updated: 29 September 2026.
