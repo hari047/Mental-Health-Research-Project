@@ -126,7 +126,7 @@ Mental-Health-Research-Project/
 └── LICENSE
 ```
 
-The repository does not include `dataset.zip`, the source CSVs, a fitted model or a pinned dependency file. Saved notebook outputs can be inspected without those files; recomputing the analysis requires the corresponding source data.
+The repository does not include `dataset.zip`, the source CSVs, a fitted model or a pinned dependency file. Saved notebook outputs can be inspected without those files; recomputing the analysis requires the corresponding source data. (The dataset is proprietary and cannot be shared)
 
 ## Running the analysis
 
@@ -205,5 +205,7 @@ These correspond to cells **4, 7, 53, 56 and 58**, counting all cells from one i
 Supervised by **Dr Menasha Thilakaratne**, as credited in the notebook.
 
 The repository code is available under the [MIT License](LICENSE). This does not establish redistribution rights for the underlying forum data.
+
+This repository was made as a public showcase of an Adelaide University Research Project and must not be copied or redistributed. 
 
 *README prepared from notebook revision [`0cdc9ef`](https://github.com/hari047/Mental-Health-Research-Project/blob/0cdc9ef7bf6c7a14990a8ee98b9418c2cf8d6a79/Mental_Health_Trajectories_Part_A.ipynb).*
