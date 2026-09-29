@@ -155,13 +155,11 @@ Unless separately authorised in writing by the relevant rights holder, repositor
 
 The [repository rights notice](LICENSE) records these restrictions. It does not claim to revoke permissions already granted for material in earlier MIT-licensed revisions, override GitHub's public-repository viewing and forking terms, remove rights provided by applicable law, or alter third-party licences. No new reuse licence is offered by this revision.
 
-## Author and evidence
+## Author
 
 **Hari Prasad Rangaraj** · Master of Artificial Intelligence and Machine Learning, Adelaide University
 
 **Supervisor:** Dr Menasha Thilakaratne
 
-- **Part A evidence:** code and saved outputs in [notebook revision `0cdc9ef`](https://github.com/hari047/Mental-Health-Research-Project/blob/0cdc9ef7bf6c7a14990a8ee98b9418c2cf8d6a79/Mental_Health_Trajectories_Part_A.ipynb).
-- **Part B evidence:** my private final report, methods and results sections, Tables 2–6 and Appendix B. Only an original summary of aggregate findings is published here.
 
 *README reviewed and updated: 29 September 2026.*
